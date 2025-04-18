@@ -9,6 +9,7 @@ zxing = "4.3.0"
 junit = "4.13.2"
 androidx-junit = "1.2.1"
 espresso = "3.6.1"
+androidx-material-icons-extended = "1.7.8"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android-gradle-plugin" }
@@ -30,7 +31,7 @@ androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", vers
 androidx-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
-
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "androidx-material-icons-extended" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

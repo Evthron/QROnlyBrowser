@@ -29,6 +29,13 @@ import androidx.compose.material3.SnackbarHostState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -73,13 +80,15 @@ fun BrowserApp() {
 //                        .weight(1f)
 //                        .padding(end = 8.dp)
 //                )
-                FilledTonalButton(
+                IconButton(
                     onClick = {
                         if (permissionState.status.isGranted) scanLauncher.launch(ScanOptions())
                         else permissionState.launchPermissionRequest()
                     },
                     modifier = Modifier.padding(end = 8.dp)
-                ) { Text("Scan") }
+                ) {
+                    Icon(Icons.Outlined.QrCodeScanner, contentDescription = "Scan QR Code")
+                }
 //                FilledTonalButton(
 //                    onClick = {
 //                        if (url.isNotBlank()) {
@@ -88,18 +97,24 @@ fun BrowserApp() {
 //                    }
 //                ) { Text("Go") }
                 // 新增：返回、前進、刷新按鈕
-                FilledTonalButton(
+                IconButton(
                     onClick = { webView?.takeIf { it.canGoBack() }?.goBack() },
                     modifier = Modifier.padding(end = 8.dp)
-                ) { Text("Back") }
-                FilledTonalButton(
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Go Back")
+                }
+                IconButton(
                     onClick = { webView?.takeIf { it.canGoForward() }?.goForward() },
                     modifier = Modifier.padding(end = 8.dp)
-                ) { Text("Forward") }
-                FilledTonalButton(
+                ) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = "Go Forward")
+                }
+                IconButton(
                     onClick = { webView?.reload() },
                     modifier = Modifier.padding(end = 8.dp)
-                ) { Text("Refresh") }
+                ) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = "Refresh")
+                }
             }
         }
     ) { padding ->
