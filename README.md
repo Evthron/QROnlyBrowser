@@ -1,2 +1,2 @@
 # QROnlyBrowser
-A android browser that can only access internet by scanning qr code
+A android browser that can only access internet by scanning QR code
