@@ -24,6 +24,11 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.accompanist.permissions.isGranted
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -48,8 +53,10 @@ fun BrowserApp() {
             url = if (scanned.startsWith("http://") || scanned.startsWith("https://")) scanned else "https://$scanned"
         }
     }
-
+    val snackbarHostState = remember { SnackbarHostState() }
+    var webView by remember { mutableStateOf<WebView?>(null) } // 新增：儲存 WebView 實例
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Row(
                 modifier = Modifier
@@ -80,6 +87,19 @@ fun BrowserApp() {
 //                        }
 //                    }
 //                ) { Text("Go") }
+                // 新增：返回、前進、刷新按鈕
+                FilledTonalButton(
+                    onClick = { webView?.takeIf { it.canGoBack() }?.goBack() },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) { Text("Back") }
+                FilledTonalButton(
+                    onClick = { webView?.takeIf { it.canGoForward() }?.goForward() },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) { Text("Forward") }
+                FilledTonalButton(
+                    onClick = { webView?.reload() },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) { Text("Refresh") }
             }
         }
     ) { padding ->
@@ -95,11 +115,15 @@ fun BrowserApp() {
                                 view.loadUrl(request.url.toString())
                                 false
                             } else {
-                                true // 阻止跨網域跳轉
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    snackbarHostState.showSnackbar("Blocked: ${request.url.host}")
+                                }
+                                true
                             }
                         }
                     }
                     loadUrl(url)
+                    webView = this
                 }
             },
             update = { it.loadUrl(url) },
