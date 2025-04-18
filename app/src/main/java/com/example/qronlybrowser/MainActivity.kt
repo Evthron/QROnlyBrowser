@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun BrowserApp() {
-    var url by remember { mutableStateOf("https://www.google.com") }
+    var url by remember { mutableStateOf("https://example.com") }
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.trim()?.let { scanned ->
@@ -55,15 +55,15 @@ fun BrowserApp() {
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it.trim() },
-                    label = { Text("URL") },
-                    singleLine = true,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp)
-                )
+//                OutlinedTextField(
+//                    value = url,
+//                    onValueChange = { url = it.trim() },
+//                    label = { Text("URL") },
+//                    singleLine = true,
+//                    modifier = Modifier
+//                        .weight(1f)
+//                        .padding(end = 8.dp)
+//                )
                 FilledTonalButton(
                     onClick = {
                         if (permissionState.status.isGranted) scanLauncher.launch(ScanOptions())
@@ -71,13 +71,13 @@ fun BrowserApp() {
                     },
                     modifier = Modifier.padding(end = 8.dp)
                 ) { Text("Scan") }
-                FilledTonalButton(
-                    onClick = {
-                        if (url.isNotBlank()) {
-                            url = if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
-                        }
-                    }
-                ) { Text("Go") }
+//                FilledTonalButton(
+//                    onClick = {
+//                        if (url.isNotBlank()) {
+//                            url = if (url.startsWith("http://") || url.startsWith("https://")) url else "https://$url"
+//                        }
+//                    }
+//                ) { Text("Go") }
             }
         }
     ) { padding ->
