@@ -1,7 +1,9 @@
 package com.example.qronlybrowser
 
 import android.Manifest
+import android.net.Uri
 import android.os.Bundle
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -85,7 +87,18 @@ fun BrowserApp() {
             factory = { context ->
                 WebView(context).apply {
                     settings.javaScriptEnabled = true
-                    webViewClient = WebViewClient()
+                    webViewClient = object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                            val currentHost = Uri.parse(url).host ?: return false
+                            val targetHost = request.url.host ?: return false
+                            return if (currentHost == targetHost) {
+                                view.loadUrl(request.url.toString())
+                                false
+                            } else {
+                                true // 阻止跨網域跳轉
+                            }
+                        }
+                    }
                     loadUrl(url)
                 }
             },
