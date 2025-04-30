@@ -57,14 +57,25 @@ fun BrowserApp() {
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.trim()?.let { scanned ->
-            url = if (scanned.startsWith("http://") || scanned.startsWith("https://")) scanned else "https://$scanned"
+            val secureScanned = if (scanned.startsWith("http://")) {
+                scanned.replace("http://", "https://") // Corrected: Assign to a new variable
+            } else {
+                scanned
+            }
+
+            url = if (secureScanned.startsWith("http://") || secureScanned.startsWith("https://")) {
+                secureScanned
+            } else {
+                "https://$secureScanned"
+            }
         }
     }
+
     val snackbarHostState = remember { SnackbarHostState() }
     var webView by remember { mutableStateOf<WebView?>(null) } // 新增：儲存 WebView 實例
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
+        bottomBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -124,17 +135,20 @@ fun BrowserApp() {
                     settings.javaScriptEnabled = true
                     webViewClient = object : WebViewClient() {
                         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                            val currentHost = Uri.parse(url).host ?: return false
-                            val targetHost = request.url.host ?: return false
-                            return if (currentHost == targetHost) {
-                                view.loadUrl(request.url.toString())
-                                false
-                            } else {
-                                CoroutineScope(Dispatchers.Main).launch {
-                                    snackbarHostState.showSnackbar("Blocked: ${request.url.host}")
+                            if (request.hasGesture()) {
+                                val currentHost = Uri.parse(url).host ?: return false
+                                val targetHost = request.url.host ?: return false
+                                return if (currentHost == targetHost) {
+                                    view.loadUrl(request.url.toString())
+                                    false
+                                } else {
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        snackbarHostState.showSnackbar("Blocked: ${request.url.host}")
+                                    }
+                                    true
                                 }
-                                true
                             }
+                            return false
                         }
                     }
                     loadUrl(url)
