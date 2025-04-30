@@ -3,7 +3,9 @@ package com.example.qronlybrowser
 import android.Manifest
 import android.net.Uri
 import android.os.Bundle
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -11,6 +13,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,10 +36,16 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.ZoomIn
+import androidx.compose.material.icons.outlined.ZoomOut
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -53,7 +63,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun BrowserApp() {
-    var url by remember { mutableStateOf("https://example.com") }
+    var url by remember { mutableStateOf("https://now.order.place/?token=TEST_TOKEN#/stor/mode/prekiosk") }
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.trim()?.let { scanned ->
@@ -73,6 +83,8 @@ fun BrowserApp() {
 
     val snackbarHostState = remember { SnackbarHostState() }
     var webView by remember { mutableStateOf<WebView?>(null) } // 新增：儲存 WebView 實例
+    var showSourceDialog by remember { mutableStateOf(false) } // New: Control dialog visibility
+    var sourceCode by remember { mutableStateOf("") } // New: Store source code
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -126,13 +138,71 @@ fun BrowserApp() {
                 ) {
                     Icon(Icons.Outlined.Refresh, contentDescription = "Refresh")
                 }
+                IconButton( // 新增：Zoom In
+                    onClick = {
+                        webView?.let {
+                            val newZoom = (it.settings.textZoom + 10).coerceAtMost(200)
+                            it.settings.textZoom = newZoom
+                        }
+                    },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(Icons.Outlined.ZoomIn, contentDescription = "Zoom In")
+                }
+                IconButton( // 新增：Zoom Out
+                    onClick = {
+                        webView?.let {
+                            val newZoom = (it.settings.textZoom - 10).coerceAtLeast(50)
+                            it.settings.textZoom = newZoom
+                        }
+                    },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(Icons.Outlined.ZoomOut, contentDescription = "Zoom Out")
+                }
+                IconButton( // New: Source code button
+                    onClick = {
+                        webView?.evaluateJavascript("(function() { return document.documentElement.outerHTML; })();") { result ->
+                            sourceCode = result?.trim('"')?.replace("\\n", "\n")?.replace("\\t", "\t") ?: "Failed to load source code"
+                            showSourceDialog = true
+                        }
+                    },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Icon(Icons.Outlined.Code, contentDescription = "View Source Code")
+                }
             }
         }
     ) { padding ->
+        // New: Source code dialog
+        if (showSourceDialog) {
+            AlertDialog(
+                onDismissRequest = { showSourceDialog = false },
+                title = { Text("Source Code") },
+                text = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(sourceCode, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSourceDialog = false }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
         AndroidView(
             factory = { context ->
                 WebView(context).apply {
                     settings.javaScriptEnabled = true
+                    settings.domStorageEnabled = true // 新增：啟用 DOM 儲存
+                    settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW // 新增：允許混合內容
+                    settings.userAgentString = "Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36" // 新增
                     webViewClient = object : WebViewClient() {
                         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                             if (request.hasGesture()) {
@@ -150,7 +220,20 @@ fun BrowserApp() {
                             }
                             return false
                         }
+                        override fun onReceivedError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            error: WebResourceError
+                        ) {
+                            // 新增：顯示加載錯誤
+                            CoroutineScope(Dispatchers.Main).launch {
+                                snackbarHostState.showSnackbar(
+                                    "Failed to load: ${error.description} (Code: ${error.errorCode})"
+                                )
+                            }
+                        }
                     }
+
                     loadUrl(url)
                     webView = this
                 }
