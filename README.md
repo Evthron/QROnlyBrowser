@@ -5,4 +5,4 @@ To minimize my screen time, I don't have browser installed on my phone. This cau
 
 This app blocks cross-domain navigation when users click on links.
 
-![Screenshot_QROnlyBrowser](https://github.com/user-attachments/assets/9c49aa52-1251-45d3-8be6-56aa807032f6)
+![Screenshot_QROnlyBrowser](https://github.com/user-attachments/assets/426cdb7e-8ac4-43aa-b233-05564b858fe5)
