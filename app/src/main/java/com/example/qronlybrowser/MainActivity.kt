@@ -3,6 +3,7 @@ package com.example.qronlybrowser
 import android.Manifest
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -46,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
@@ -63,21 +65,32 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun BrowserApp() {
-    var url by remember { mutableStateOf("https://now.order.place/?token=TEST_TOKEN#/stor/mode/prekiosk") }
+    var url by remember { mutableStateOf("https://example.com") }
     val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         result.contents?.trim()?.let { scanned ->
             val secureScanned = if (scanned.startsWith("http://")) {
-                scanned.replace("http://", "https://") // Corrected: Assign to a new variable
+                scanned.replace("http://", "https://")
             } else {
                 scanned
             }
-
-            url = if (secureScanned.startsWith("http://") || secureScanned.startsWith("https://")) {
+            val baseUrl = if (secureScanned.startsWith("http://") || secureScanned.startsWith("https://")) {
                 secureScanned
             } else {
                 "https://$secureScanned"
             }
+            // If url domain is now.order.place
+            url = if (baseUrl.contains("now.order.place")) {
+                val uri = baseUrl.toUri()
+                val path = uri.encodedPath ?: ""
+                val fragment = uri.encodedFragment ?: ""
+                val query = uri.encodedQuery
+                val newQuery = if (query.isNullOrEmpty()) "?token=TEST_TOKEN" else "$query&token=TEST_TOKEN"
+                "${uri.scheme}://${uri.host}$path$newQuery#$fragment"
+            } else {
+                baseUrl
+            }
+            Log.d("WebView", "Scanned URL with token: $url")
         }
     }
 
